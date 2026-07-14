@@ -1,0 +1,87 @@
+# CrewAI Process Documentation Agent
+
+A multi-agent AI crew that analyzes a business process and generates a complete, professional SOP (Standard Operating Procedure) — with measurable thresholds, role ownership, and exception handling.
+
+Built with **CrewAI** + **Google Gemini** (free tier). Runs locally with Python.
+
+## What it does
+
+Give it a business process in plain English (e.g., "student admission process at a private school") and the crew produces:
+
+- A numbered step-by-step process breakdown (inputs, actions, outputs, decision points)
+- A full SOP document with purpose, scope, measurable thresholds, per-step ownership, and an exceptions section
+- Output saved as `generated_sop.md`
+
+## Architecture
+
+Two agents working in sequence, with task context passing:
+
+```
+Input (process description)
+        │
+        ▼
+┌─────────────────────────┐
+│  Agent 1: Process       │   Breaks the process into steps —
+│  Analyst                │   input / action / output / decisions
+└─────────────────────────┘
+        │  (task context passed forward)
+        ▼
+┌─────────────────────────┐
+│  Agent 2: SOP Writer    │   Converts the breakdown into a
+│                         │   professional SOP with thresholds
+└─────────────────────────┘
+        │
+        ▼
+Output: generated_sop.md
+```
+
+This implements the **prompt chaining** pattern from Anthropic's "Building Effective Agents" guide — each LLM call has a single responsibility, and output flows sequentially to the next step.
+
+## Tech stack
+
+- Python 3.10+
+- [CrewAI](https://github.com/crewAIInc/crewAI) — agent orchestration
+- Google Gemini (`gemini-3-flash-preview`) via Google AI Studio free API key
+
+## Setup & run
+
+```bash
+# 1. Create and activate a virtual environment
+python -m venv crewai-env
+crewai-env\Scripts\activate        # Windows
+# source crewai-env/bin/activate   # Mac/Linux
+
+# 2. Install dependencies
+pip install "crewai[google-genai]"
+
+# 3. Set your Gemini API key (get one free at aistudio.google.com/apikey)
+set GEMINI_API_KEY=your_key_here       # Windows
+# export GEMINI_API_KEY=your_key_here  # Mac/Linux
+
+# 4. Run
+python first_crew.py
+```
+
+To document a different process, edit the `inputs={"process": ...}` value at the bottom of `first_crew.py`.
+
+## Sample output
+
+See [`generated_sop.md`](generated_sop.md) for a full SOP generated from a student admission process, including:
+
+- Conditional offers with a 30-day receipt window
+- Borderline test score handling (65–69% → re-test or probationary admission)
+- Late payment exception (one-time 3-day extension on written request)
+- Record retention rules (5-year minimum in SIS)
+
+## Debugging notes (real issues I resolved)
+
+- **`ImportError: Google Gen AI native provider not available`** — CrewAI's Gemini provider ships separately; fixed with `pip install "crewai[google-genai]"`
+- **`404 NOT_FOUND: models/gemini-2.5-flash is no longer available`** — model deprecation; updated the model string to `gemini/gemini-3-flash-preview`
+
+## Background
+
+I have hands-on experience building AI agents and automations on visual platforms (n8n, Make, Zapier). This project implements the same orchestration patterns in code: agents map to roles instead of nodes, and `context=[task]` replaces node-to-node data passing. Part of my transition into AI Workflow Analyst roles — combining 8 years of process/education experience with agentic AI tooling.
+
+## License
+
+MIT
